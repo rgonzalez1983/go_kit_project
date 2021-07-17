@@ -1,0 +1,148 @@
+definitions:
+  entity.InterfaceAPI:
+    type: object
+  entity.ListPersonsResponse:
+    properties:
+      data:
+        items:
+          type: object
+        type: array
+      message:
+        type: string
+      statusCode:
+        type: integer
+    type: object
+  entity.PersonRequest:
+    properties:
+      address:
+        type: string
+      age:
+        type: integer
+      ci:
+        type: string
+      country:
+        type: string
+      gender:
+        type: string
+      lastname:
+        type: string
+      name:
+        type: string
+    type: object
+  entity.UpdatePersonRequest:
+    properties:
+      id:
+        type: string
+      values:
+        type: object
+    type: object
+info:
+  contact: {}
+paths:
+  /create_person:
+    post:
+      consumes:
+      - text/plain
+      description: Create one person
+      parameters:
+      - description: Create Person
+        in: body
+        name: parameters
+        required: true
+        schema:
+          $ref: '#/definitions/entity.PersonRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.InterfaceAPI'
+      summary: Create one person
+      tags:
+      - CRUD
+  /delete_person/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete of one person
+      parameters:
+      - description: ID Person
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.InterfaceAPI'
+      summary: Delete one person
+      tags:
+      - CRUD
+  /get_person/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get details of one person
+      parameters:
+      - description: ID Person
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.InterfaceAPI'
+      summary: Get details of one person
+      tags:
+      - CRUD
+  /list_persons:
+    get:
+      consumes:
+      - application/json
+      description: Get details of all persons
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.ListPersonsResponse'
+      summary: Get details of all persons
+      tags:
+      - CRUD
+  /update_person/{id}:
+    post:
+      consumes:
+      - text/plain
+      description: Update of one person
+      parameters:
+      - description: ID Person
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update Person
+        in: body
+        name: parameters
+        required: true
+        schema:
+          $ref: '#/definitions/entity.UpdatePersonRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.InterfaceAPI'
+      summary: Update one person
+      tags:
+      - CRUD
+swagger: "2.0"
