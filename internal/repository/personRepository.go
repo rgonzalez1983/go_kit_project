@@ -57,24 +57,24 @@ func (p personRepository) UpdatePerson(id string, r *interface{}) (error error) 
 	filter := bson.M{static.Field__id: bson.ObjectIdHex(id)}
 	found, _ := p.GetFindPersons(static.CollectionPerson, filter, bson.M{}, static.FieldUpdated, static.OrderDesc)
 	var values []interface{}
-	result_err := errors.New(static.ValueEmpty)
+	resultErr := errors.New(static.ValueEmpty)
 	if len(found) > 0 {
 		document, _ := p.ToDocument(objectNew)
 		update := bson.M{static.MongoDB__set: *document}
 		err := p.connMgo.UpdateData(static.CollectionPerson, filter, update)
 		if err != nil {
 			values = []interface{}{static.KeyType, static.ERROR, static.KeyURL, static.URLUpdatingOne, static.KeyMessage, static.MsgResponseObjectExists}
-			result_err = errors.New(static.MsgResponseObjectExists)
+			resultErr = errors.New(static.MsgResponseObjectExists)
 		} else {
 			values = []interface{}{static.KeyType, static.SUCCESS, static.KeyURL, static.URLUpdatingOne, static.KeyMessage, static.MsgResponseUpdatingOne}
-			result_err = nil
+			resultErr = nil
 		}
 	} else {
 		values = []interface{}{static.KeyType, static.ERROR, static.KeyURL, static.URLUpdatingOne, static.KeyMessage, static.MsgResponseServerErrorNoID}
-		result_err = errors.New(static.MsgResponseServerErrorNoID)
+		resultErr = errors.New(static.MsgResponseServerErrorNoID)
 	}
 	middleware.LoggingOperation(p.logger, values...)
-	return result_err
+	return resultErr
 }
 
 //Listing Persons
@@ -90,26 +90,26 @@ func (p personRepository) GetPerson(id string) (template interface{}, error erro
 	collection := static.CollectionPerson
 	var values []interface{}
 	var result interface{}
-	result_err := errors.New(static.ValueEmpty)
+	resultErr := errors.New(static.ValueEmpty)
 	if bson.IsObjectIdHex(id) {
 		filter := bson.M{static.Field__id: bson.ObjectIdHex(id)}
 		found, _ := p.GetFindPersons(collection, filter, bson.M{}, static.FieldLastname, static.OrderAsc)
 		if len(found) == 0 {
 			values = []interface{}{static.KeyType, static.ERROR, static.KeyURL, static.URLGettingOne, static.KeyMessage, static.MsgResponseServerErrorNoID}
-			result_err = errors.New(static.MsgResponseServerErrorNoID)
+			resultErr = errors.New(static.MsgResponseServerErrorNoID)
 			result = static.ValueEmpty
 		} else {
 			values = []interface{}{static.KeyType, static.SUCCESS, static.KeyURL, static.URLGettingOne, static.KeyMessage, static.MsgResponseGettingOne}
-			result_err = nil
+			resultErr = nil
 			result = found[0]
 		}
 	} else {
 		values = []interface{}{static.KeyType, static.ERROR, static.KeyURL, static.URLGettingOne, static.KeyMessage, static.MsgResponseServerErrorWrongID}
-		result_err = errors.New(static.MsgResponseServerErrorWrongID)
+		resultErr = errors.New(static.MsgResponseServerErrorWrongID)
 		result = static.ValueEmpty
 	}
 	middleware.LoggingOperation(p.logger, values...)
-	return result, result_err
+	return result, resultErr
 
 }
 
@@ -117,24 +117,24 @@ func (p personRepository) GetPerson(id string) (template interface{}, error erro
 func (p personRepository) DeletePerson(id string) (error error) {
 	collection := static.CollectionPerson
 	var values []interface{}
-	result_err := errors.New(static.ValueEmpty)
+	resultErr := errors.New(static.ValueEmpty)
 	if bson.IsObjectIdHex(id) {
 		filter := bson.M{static.Field__id: bson.ObjectIdHex(id)}
 		found, _ := p.GetFindPersons(collection, filter, bson.M{}, static.FieldUpdated, static.OrderDesc)
 		if len(found) > 0 {
 			_ = p.connMgo.DeleteData(collection, id)
 			values = []interface{}{static.KeyType, static.SUCCESS, static.KeyURL, static.URLDeletingOne, static.KeyMessage, static.MsgResponseDeletingOne}
-			result_err = nil
+			resultErr = nil
 		} else {
 			values = []interface{}{static.KeyType, static.ERROR, static.KeyURL, static.URLDeletingOne, static.KeyMessage, static.MsgResponseServerErrorNoData}
-			result_err = errors.New(static.MsgResponseServerErrorNoData)
+			resultErr = errors.New(static.MsgResponseServerErrorNoData)
 		}
 	} else {
 		values = []interface{}{static.KeyType, static.ERROR, static.KeyURL, static.URLDeletingOne, static.KeyMessage, static.MsgResponseServerErrorWrongID}
-		result_err = errors.New(static.MsgResponseServerErrorWrongID)
+		resultErr = errors.New(static.MsgResponseServerErrorWrongID)
 	}
 	middleware.LoggingOperation(p.logger, values...)
-	return result_err
+	return resultErr
 }
 
 //FUNCIONES AUXILIARES
