@@ -29,13 +29,6 @@ definitions:
       name:
         type: string
     type: object
-  entity.UpdatePersonRequest:
-    properties:
-      id:
-        type: string
-      values:
-        type: object
-    type: object
 info:
   contact: {}
 paths:
@@ -62,9 +55,9 @@ paths:
       tags:
       - CRUD
   /delete_person/{id}:
-    delete:
+    post:
       consumes:
-      - application/json
+      - text/plain
       description: Delete of one person
       parameters:
       - description: ID Person
@@ -85,7 +78,7 @@ paths:
   /get_person/{id}:
     get:
       consumes:
-      - application/json
+      - text/plain
       description: Get details of one person
       parameters:
       - description: ID Person
@@ -106,7 +99,7 @@ paths:
   /list_persons:
     get:
       consumes:
-      - application/json
+      - text/plain
       description: Get details of all persons
       produces:
       - application/json
@@ -134,7 +127,7 @@ paths:
         name: parameters
         required: true
         schema:
-          $ref: '#/definitions/entity.UpdatePersonRequest'
+          $ref: '#/definitions/entity.PersonRequest'
       produces:
       - application/json
       responses:

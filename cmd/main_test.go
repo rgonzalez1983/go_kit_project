@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/stretchr/testify/assert"
+	"go_kit_project/internal/app"
 	"go_kit_project/internal/config"
-	"go_kit_project/internal/handler"
 	"go_kit_project/internal/static"
 	"net/http"
 	"net/http/httptest"
@@ -14,7 +14,7 @@ import (
 	"testing"
 )
 
-var a handler.App
+var a app.App
 
 func TestMain(m *testing.M) {
 	if err, isConfigurable := config.ConfigEnv(); !isConfigurable {
@@ -26,8 +26,8 @@ func TestMain(m *testing.M) {
 	}
 }
 
-func App() handler.App {
-	a := handler.App{}
+func App() app.App {
+	a := app.App{}
 	_ = a.Initialize(static.ValueEmpty, static.ValueEmpty)
 	return a
 }
@@ -38,40 +38,35 @@ func ResponseToJSON(responseBody string) (map[string]interface{}, error) {
 	return JSON, err
 }
 
-//func TestListPersons(t *testing.T) {
-//	request, _ := http.NewRequest(static.HTTP_GET, static.URLListingAll, nil)
-//	response := httptest.NewRecorder()
-//	a.Router.ServeHTTP(response, request)
-//	values := []interface{}{static.KeyType, static.TEST, static.KeyURL, static.URLListingAll, static.KeyMessage, static.MsgResponseListingAll}
-//	a.LoggingOperation(values...)
-//	responseBody := ResponseToJSON(response.Body.String())
-//	length := len(responseBody[static.KeyResponseData].([]interface{}))
-//	assert.Equal(t, response.Code, response.Code, static.MsgTestEXPECTED + " "+strconv.Itoa(response.Code))
-//	assert.Equal(t, length, len(responseBody[static.KeyResponseData].([]interface{})), static.MsgTestEXPECTED + " "+strconv.Itoa(length))
-//}
-//
-//func TestGetPerson(t *testing.T) {
-//	url := static.URLGettingOne + "/60e63f2ebefb1fb4a19de900"
-//	request, _ := http.NewRequest(static.HTTP_GET, url, nil)
-//	response := httptest.NewRecorder()
-//	a.Router.ServeHTTP(response, request)
-//	message := func() string {
-//		if response.Code == 500 {
-//			return static.MsgResponseServerErrorNoData
-//		} else {
-//			return static.MsgResponseGettingOne
-//		}
-//	}()
-//	values := []interface{}{static.KeyType, static.TEST, static.KeyURL, static.URLGettingOne, static.KeyMessage, message}
-//	a.LoggingOperation(values...)
-//	responseBody := ResponseToJSON(response.Body.String())
-//	assert.Equal(t, response.Code, response.Code, static.MsgTestEXPECTED + " "+strconv.Itoa(response.Code))
-//	assert.Equal(t, message, responseBody[static.KeyResponseMessage].(interface{}), static.MsgTestEXPECTED + " "+message)
-//	assert.Equal(t, "83110715463", responseBody[static.KeyResponseData].(map[string]interface{})["ci"], "EXPECTED 83110715463")
-//}
+func TestListPersons(t *testing.T) {
+	t.Run("PROBANDO OBTENER LISTADO DE OBJETOS", func(t *testing.T) {
+		url := static.URLListingAll
+		message, eval := ResponsePersonTest(http.MethodGet, url, bytes.NewBuffer(nil), static.MsgResponseListingAll, static.MsgResponseListingAll)
+		assert.Equal(t, message, eval, static.MsgTestEXPECTED+" "+message)
+	})
+}
+
+func TestGetPerson(t *testing.T) {
+	url := static.ValueEmpty
+	t.Run("PROBANDO OBTENER OBJETO", func(t *testing.T) {
+		url = static.URLGettingOne + "/60e63f2ebefb1fb4a19de900"
+		message, eval := ResponsePersonTest(http.MethodGet, url, bytes.NewBuffer(nil), static.MsgResponseServerErrorNoData, static.MsgResponseGettingOne)
+		if message != eval {
+			eval = static.MsgResponseServerErrorNoID
+		}
+		assert.Equal(t, message, eval, static.MsgTestEXPECTED+" "+message)
+	})
+	t.Run("PROBANDO MIDDLEWARE ID NO VALIDO", func(t *testing.T) {
+		url = static.URLGettingOne + "/60*63f2ebefb1fb4a19de900"
+		message, eval := ResponsePersonTest(http.MethodGet, url, bytes.NewBuffer(nil), static.MsgUnauthorizatedAlphanumericID, static.MsgResponseGettingOne)
+		assert.Equal(t, message, eval, static.MsgTestEXPECTED+" "+message)
+	})
+
+}
 
 func TestCreatePerson(t *testing.T) {
-	payload := []byte(`{"name" : "JUAN BRAULIO",
+	t.Run("PROBANDO MIDDLEWARE LONGITUD EXCESIVA EN CREAR", func(t *testing.T) {
+		payload := []byte(`{"name" : "JUAN BRAULIO",
 						"lastname" : "HERNANDEZ NAPOLES",
 						"ci" : "96012326175679",
 						"country" : "Cuba",
@@ -79,60 +74,104 @@ func TestCreatePerson(t *testing.T) {
 						"gender" : "M",
 						"address" : "Calle 2da, Buenos Aires, Camaguey"
 						}`)
-	request, _ := http.NewRequest(static.HTTP_POST, static.URLCreatingOne, bytes.NewBuffer(payload))
+		message, eval := ResponsePersonTest(http.MethodPost, static.URLCreatingOne, bytes.NewBuffer(payload), static.MsgUnauthorizatedLengthCI, static.MsgResponseCreatingOne)
+		assert.Equal(t, message, eval, static.MsgTestEXPECTED+" "+message)
+	})
+	t.Run("PROBANDO MIDDLEWARE CI SOLO DIGITOS EN CREAR", func(t *testing.T) {
+		payload := []byte(`{"name" : "JUAN BRAULIO",
+						"lastname" : "HERNANDEZ NAPOLES",
+						"ci" : "96P123261",
+						"country" : "Cuba",
+						"age" : 24,
+						"gender" : "M",
+						"address" : "Calle 2da, Buenos Aires, Camaguey"
+						}`)
+		message, eval := ResponsePersonTest(http.MethodPost, static.URLCreatingOne, bytes.NewBuffer(payload), static.MsgUnauthorizatedDigitCI, static.MsgResponseCreatingOne)
+		assert.Equal(t, message, eval, static.MsgTestEXPECTED+" "+message)
+	})
+	t.Run("PROBANDO INSERCION U OBJETO EXISTENTE", func(t *testing.T) {
+		payload := []byte(`{"name" : "AMALIA",
+						"lastname" : "CORRALES BETANCOURT",
+						"ci" : "96012326175",
+						"country" : "Cuba",
+						"age" : 24,
+						"gender" : "M",
+						"address" : "Calle 2da, Buenos Aires, Camaguey"
+						}`)
+		message, eval := ResponsePersonTest(http.MethodPost, static.URLCreatingOne, bytes.NewBuffer(payload), static.MsgResponseCreatingOne, static.MsgResponseCreatingOne)
+		if message != eval {
+			eval = static.MsgResponseObjectExists
+		}
+		assert.Equal(t, message, eval, static.MsgTestEXPECTED+" "+message)
+	})
+}
+
+func TestUpdatePerson(t *testing.T) {
+	url := static.ValueEmpty
+	t.Run("PROBANDO ERROR OBJETO INEXISTENTE", func(t *testing.T) {
+		url = static.URLUpdatingOne + "/60e661b0befb1fb4a19df241"
+		payload := []byte(`{
+						"name" : "ANA M."
+						}`)
+		message, eval := ResponsePersonTest(http.MethodPost, url, bytes.NewBuffer(payload), static.MsgResponseServerErrorNoID, static.MsgResponseUpdatingOne)
+		if message != eval {
+			eval = static.MsgResponseServerErrorNoID
+		}
+		assert.Equal(t, message, eval, static.MsgTestEXPECTED+" "+message)
+	})
+	t.Run("PROBANDO ACTUALIZAR OBJETO", func(t *testing.T) {
+		url = static.URLUpdatingOne + "/60f74ab279f9e73baffdb9de"
+		payload := []byte(`{
+						"ci" : "96092017065"
+						}`)
+		message, eval := ResponsePersonTest(http.MethodPost, url, bytes.NewBuffer(payload), static.MsgResponseUpdatingOne, static.MsgResponseUpdatingOne)
+		assert.Equal(t, message, eval, static.MsgTestEXPECTED+" "+message)
+	})
+	t.Run("PROBANDO MIDDLEWARE LONGITUD EXCESIVA EN ACTUALIZAR", func(t *testing.T) {
+		url = static.URLUpdatingOne + "/60f74ab279f9e73baffdb9de"
+		payload := []byte(`{
+						"ci" : "9609201706587"
+						}`)
+		message, eval := ResponsePersonTest(http.MethodPost, url, bytes.NewBuffer(payload), static.MsgUnauthorizatedLengthCI, static.MsgResponseUpdatingOne)
+		assert.Equal(t, message, eval, static.MsgTestEXPECTED+" "+message)
+	})
+	t.Run("PROBANDO MIDDLEWARE CI SOLO DIGITOS EN ACTUALIZAR", func(t *testing.T) {
+		url = static.URLUpdatingOne + "/60f74ab279f9e73baffdb9de"
+		payload := []byte(`{
+						"ci" : "9609201T065"
+						}`)
+		message, eval := ResponsePersonTest(http.MethodPost, url, bytes.NewBuffer(payload), static.MsgUnauthorizatedDigitCI, static.MsgResponseUpdatingOne)
+		assert.Equal(t, message, eval, static.MsgTestEXPECTED+" "+message)
+	})
+}
+
+func TestDeletePerson(t *testing.T) {
+	url := static.ValueEmpty
+	t.Run("PROBANDO ELIMINAR OBJETO", func(t *testing.T) {
+		url = static.URLDeletingOne + "/60e63f2ebefb1fb4a19de900"
+		message, eval := ResponsePersonTest(http.MethodPost, url, bytes.NewBuffer(nil), static.MsgResponseServerErrorNoData, static.MsgResponseGettingOne)
+		if message != eval {
+			eval = static.MsgResponseServerErrorNoID
+		}
+		assert.Equal(t, message, eval, static.MsgTestEXPECTED+" "+message)
+	})
+	t.Run("PROBANDO MIDDLEWARE ID NO VALIDO", func(t *testing.T) {
+		url = static.URLDeletingOne + "/60*63f2ebefb1fb4a19de900"
+		message, eval := ResponsePersonTest(http.MethodPost, url, bytes.NewBuffer(nil), static.MsgUnauthorizatedAlphanumericID, static.MsgResponseGettingOne)
+		assert.Equal(t, message, eval, static.MsgTestEXPECTED+" "+message)
+	})
+}
+
+//FUNCIONES EXTRAS
+func ResponsePersonTest(method string, url string, body *bytes.Buffer, eval string, defaultMessage string) (string, string) {
+	request, _ := http.NewRequest(method, url, body)
 	response := httptest.NewRecorder()
 	a.Router.ServeHTTP(response, request)
 	responseBody, err := ResponseToJSON(response.Body.String())
-	message, eval := func() (string, string) {
+	return func() (string, string) {
 		if err != nil {
-			return response.Body.String(), static.MsgResponseObjectExists
-		} else {
-			return responseBody[static.KeyMessage].(string), static.MsgResponseCreatingOne
+			return response.Body.String(), eval
 		}
+		return responseBody[static.KeyMessage].(string), defaultMessage
 	}()
-	assert.Equal(t, message, eval, static.MsgTestEXPECTED+" "+message)
 }
-
-//func TestUpdatePerson(t *testing.T) {
-//	url := static.URLUpdatingOne + "/60e661b0befb1fb4a19df241"
-//	payload := []byte(`{
-//						"name" : "ANA M."
-//						}`)
-//	request, _ := http.NewRequest(static.HTTP_POST, url, bytes.NewBuffer(payload))
-//	response := httptest.NewRecorder()
-//	a.Router.ServeHTTP(response, request)
-//	responseBody := ResponseToJSON(response.Body.String())
-//	message := func() string {
-//		if responseBody[static.KeyResponseStatusCode].(interface{}).(float64) == http.StatusConflict {
-//			return static.MsgResponseObjectExists
-//		} else if responseBody[static.KeyResponseStatusCode].(interface{}).(float64) == http.StatusInternalServerError {
-//			return static.MsgResponseServerError
-//		} else {
-//			return static.MsgResponseUpdatingOne
-//		}
-//	}()
-//	values := []interface{}{static.KeyType, static.TEST, static.KeyURL, static.URLUpdatingOne, static.KeyMessage, message}
-//	a.LoggingOperation(values...)
-//	assert.Equal(t, response.Code, response.Code, static.MsgTestEXPECTED + " "+strconv.FormatFloat(responseBody[static.KeyResponseStatusCode].(interface{}).(float64), 'E', -1, 64))
-//	assert.Equal(t, message, responseBody[static.KeyResponseMessage].(interface{}), static.MsgTestEXPECTED + " "+message)
-//	assert.Equal(t, "ANA M.", responseBody[static.KeyResponseData].(map[string]interface{})["name"], "EXPECTED ANA M.")
-//}
-//
-//func TestDeletePerson(t *testing.T) {
-//	url := static.URLDeletingOne + "/60de364abefb1fb4a19d8bb7"
-//	request, _ := http.NewRequest(static.HTTP_DELETE, url, nil)
-//	response := httptest.NewRecorder()
-//	a.Router.ServeHTTP(response, request)
-//	message := func() string {
-//		if response.Code == 500 {
-//			return static.MsgResponseServerErrorNoData
-//		} else {
-//			return static.MsgResponseUpdatingOne
-//		}
-//	}()
-//	values := []interface{}{static.KeyType, static.TEST, static.KeyURL, static.URLDeletingOne, static.KeyMessage, message}
-//	a.LoggingOperation(values...)
-//	responseBody := ResponseToJSON(response.Body.String())
-//	assert.Equal(t, response.Code, response.Code, static.MsgTestEXPECTED + " "+strconv.Itoa(response.Code))
-//	assert.Equal(t, message, responseBody[static.KeyResponseMessage].(interface{}), static.MsgTestEXPECTED + " "+message)
-//}

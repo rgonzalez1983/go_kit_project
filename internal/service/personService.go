@@ -2,36 +2,49 @@ package service
 
 import (
 	"context"
+	"github.com/go-kit/kit/log"
+	"go_kit_project/internal/kafka"
 	"go_kit_project/internal/repository"
 	"go_kit_project/internal/static"
 	"net/http"
 )
 
-type PersonService struct {
+type personService struct {
 	personRepository repository.PersonRepository
+	logger           log.Logger
 }
 
-func NewPersonService(repo repository.PersonRepository) PersonService {
-	return PersonService{
+type PersonService interface {
+	CreatePersonService(context context.Context, data *interface{}) (string, error, int)
+	UpdatePersonService(context context.Context, id string, data *interface{}) (string, error, int)
+	ListPersonsService(context context.Context) (string, error, int, []interface{})
+	GetPersonService(context context.Context, id string) (string, error, int, interface{})
+	DeletePersonService(context context.Context, id string) (string, error, int)
+}
+
+func NewPersonService(repo repository.PersonRepository, logger log.Logger) PersonService {
+	return &personService{
 		personRepository: repo,
+		logger:           logger,
 	}
 }
 
-func (ps PersonService) CreatePersonService(_ context.Context, data *interface{}) (string, error, int) {
+func (ps *personService) CreatePersonService(_ context.Context, data *interface{}) (string, error, int) {
 	if err := ps.personRepository.CreatePerson(data); err != nil {
 		return static.ERROR, err, http.StatusInternalServerError
 	}
+	kafka.SaveDataToKafka(data)
 	return static.MsgResponseCreatingOne, nil, http.StatusCreated
 }
 
-func (ps PersonService) UpdatePersonService(_ context.Context, id string, data *interface{}) (string, error, int) {
+func (ps *personService) UpdatePersonService(_ context.Context, id string, data *interface{}) (string, error, int) {
 	if err := ps.personRepository.UpdatePerson(id, data); err != nil {
 		return static.ERROR, err, http.StatusInternalServerError
 	}
 	return static.MsgResponseUpdatingOne, nil, http.StatusCreated
 }
 
-func (ps PersonService) ListPersonsService(_ context.Context) (string, error, int, []interface{}) {
+func (ps *personService) ListPersonsService(_ context.Context) (string, error, int, []interface{}) {
 	list, err := ps.personRepository.ListPersons()
 	if err != nil {
 		return static.ERROR, err, http.StatusInternalServerError, nil
@@ -39,7 +52,7 @@ func (ps PersonService) ListPersonsService(_ context.Context) (string, error, in
 	return static.MsgResponseListingAll, nil, http.StatusCreated, list
 }
 
-func (ps PersonService) GetPersonService(_ context.Context, id string) (string, error, int, interface{}) {
+func (ps *personService) GetPersonService(_ context.Context, id string) (string, error, int, interface{}) {
 	object, err := ps.personRepository.GetPerson(id)
 	if err != nil {
 		return static.ERROR, err, http.StatusInternalServerError, nil
@@ -47,7 +60,7 @@ func (ps PersonService) GetPersonService(_ context.Context, id string) (string, 
 	return static.MsgResponseGettingOne, nil, http.StatusCreated, object
 }
 
-func (ps PersonService) DeletePersonService(_ context.Context, id string) (string, error, int) {
+func (ps *personService) DeletePersonService(_ context.Context, id string) (string, error, int) {
 	err := ps.personRepository.DeletePerson(id)
 	if err != nil {
 		return static.ERROR, err, http.StatusInternalServerError

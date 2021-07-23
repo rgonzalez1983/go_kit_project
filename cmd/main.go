@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 	"github.com/spf13/viper"
+	"go_kit_project/internal/app"
 	"go_kit_project/internal/config"
-	"go_kit_project/internal/handler"
 	"go_kit_project/internal/middleware"
 	"go_kit_project/internal/static"
 	"os"
@@ -12,7 +12,7 @@ import (
 	"syscall"
 )
 
-var httpHandler = handler.App{}
+var httpHandler = app.App{}
 
 func main() {
 	if err, isConfigurable := config.ConfigEnv(); !isConfigurable {

@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"github.com/go-kit/kit/log"
 	"go_kit_project/internal/static"
 	"io"
@@ -24,6 +25,14 @@ func CORS(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 		return
+	})
+}
+
+func MiddlewareOne(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("Executing middlewareOne")
+		next.ServeHTTP(w, r)
+		fmt.Println("Executing middlewareOne again")
 	})
 }
 

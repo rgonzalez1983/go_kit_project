@@ -4,7 +4,9 @@ import (
 	"context"
 	"github.com/go-kit/kit/endpoint"
 	"go_kit_project/internal/entity"
+	"go_kit_project/internal/middleware"
 	"go_kit_project/internal/service"
+	"go_kit_project/internal/static"
 )
 
 type PersonEndpoints struct {
@@ -15,14 +17,13 @@ type PersonEndpoints struct {
 	DeletePersonEndpoint endpoint.Endpoint
 }
 
-func MakePersonEndpoints(ps service.PersonService) PersonEndpoints {
-	var middlewares []endpoint.Middleware
+func MakePersonEndpoints(ps *service.PersonService, pm middleware.PersonMiddleware) PersonEndpoints {
 	return PersonEndpoints{
-		CreatePersonEndpoint: wrapEndpoint(makeCreatePersonEndpoint(ps), middlewares),
-		UpdatePersonEndpoint: wrapEndpoint(makeUpdatePersonEndpoint(ps), middlewares),
-		ListPersonsEndpoint:  wrapEndpoint(makeListPersonsEndpoint(ps), middlewares),
-		GetPersonEndpoint:    wrapEndpoint(makeGetPersonEndpoint(ps), middlewares),
-		DeletePersonEndpoint: wrapEndpoint(makeDeletePersonEndpoint(ps), middlewares),
+		CreatePersonEndpoint: wrapEndpoint(makeCreatePersonEndpoint(*ps), []endpoint.Middleware{pm.AuthorizationCI(static.FuncCreatePerson)}),
+		UpdatePersonEndpoint: wrapEndpoint(makeUpdatePersonEndpoint(*ps), []endpoint.Middleware{pm.AuthorizationCI(static.FuncUpdatePerson)}),
+		ListPersonsEndpoint:  wrapEndpoint(makeListPersonsEndpoint(*ps), nil),
+		GetPersonEndpoint:    wrapEndpoint(makeGetPersonEndpoint(*ps), []endpoint.Middleware{pm.AuthorizationID()}),
+		DeletePersonEndpoint: wrapEndpoint(makeDeletePersonEndpoint(*ps), []endpoint.Middleware{pm.AuthorizationID()}),
 	}
 }
 
@@ -82,8 +83,10 @@ func makeDeletePersonEndpoint(ps service.PersonService) endpoint.Endpoint {
 }
 
 func wrapEndpoint(e endpoint.Endpoint, middlewares []endpoint.Middleware) endpoint.Endpoint {
-	for _, m := range middlewares {
-		e = m(e)
+	if middlewares != nil {
+		for _, m := range middlewares {
+			e = m(e)
+		}
 	}
 	return e
 }

@@ -31,6 +31,21 @@ const (
 	MsgApiRestDescription         string = "Simple CRUD using a data from persons as example"
 	MsgApiRestVersion1            string = "1.0"
 	MsgTestEXPECTED               string = "EXPECTED"
+	//message middleware
+	MsgUnauthorizatedLengthCI       string = "CI INCORRECTO (LONGITUD ENTRE 6 Y 11 DIGITOS)"
+	MsgUnauthorizatedDigitCI        string = "CI INCORRECTO (TODOS LOS CARACTERES DEBEN SER DIGITOS)"
+	MsgUnauthorizatedAlphanumericID string = "ID INCORRECTO (TODOS LOS CARACTERES DEBEN SER LETRAS O DIGITOS)"
+	//message KAFKA
+	MsgSavingDataKafka        string = "SAVING TO APACHE KAFKA"
+	MsgReceivingDataFromKafka string = "START RECEIVING DATA FROM APACHE KAFKA"
+	//parameters KAFKA
+	KeyKafkaBootstrapServer   string = "bootstrap.servers"
+	KeyKafkaGroupID           string = "group.id"
+	KeyKafkaAutoOffsetReset   string = "auto.offset.reset"
+	KafkaBootstrapServerValue string = "localhost:9092"
+	KafkaGroupIDValue         string = "group-id-1"
+	KafkaAutoOffsetResetValue string = "earliest"
+	KafkaTopicInUse           string = "persons-topic1"
 	//URLs
 	URLStartingNow string = "/"
 	URLApi         string = "/api"

@@ -59,10 +59,10 @@ var doc = `{
             }
         },
         "/delete_person/{id}": {
-            "delete": {
+            "post": {
                 "description": "Delete of one person",
                 "consumes": [
-                    "application/json"
+                    "text/plain"
                 ],
                 "produces": [
                     "application/json"
@@ -94,7 +94,7 @@ var doc = `{
             "get": {
                 "description": "Get details of one person",
                 "consumes": [
-                    "application/json"
+                    "text/plain"
                 ],
                 "produces": [
                     "application/json"
@@ -126,7 +126,7 @@ var doc = `{
             "get": {
                 "description": "Get details of all persons",
                 "consumes": [
-                    "application/json"
+                    "text/plain"
                 ],
                 "produces": [
                     "application/json"
@@ -172,7 +172,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/entity.UpdatePersonRequest"
+                            "$ref": "#/definitions/entity.PersonRequest"
                         }
                     }
                 ],
@@ -231,17 +231,6 @@ var doc = `{
                 },
                 "name": {
                     "type": "string"
-                }
-            }
-        },
-        "entity.UpdatePersonRequest": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "string"
-                },
-                "values": {
-                    "type": "object"
                 }
             }
         }
